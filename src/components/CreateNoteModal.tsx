@@ -30,7 +30,7 @@ type Props = {
   submit: () => any;
 };
 
-function CreateNoteModal({
+export default function CreateNoteModal({
   visible,
   onClose,
   title,
@@ -43,6 +43,8 @@ function CreateNoteModal({
   setTaskDate,
   submit,
 }: Props) {
+  const [showPicker, setShowPicker] = useState<boolean>(false);
+
   return (
     <Modal
       visible={visible}
@@ -139,10 +141,6 @@ function CreateNoteModal({
     </Modal>
   );
 }
-
-const [showPicker, setShowPicker] = useState(false);
-
-export default CreateNoteModal;
 
 const styles = StyleSheet.create({
   modalContainer: {
