@@ -5,9 +5,10 @@ import {
     StyleSheet,
 } from "react-native";
 
+
 type Props = {
     slideAnim: Animated.Value;
-    setActiveTab: (tab: string) => void;
+    setActiveTab: (tab: 'all' | 'today' | 'fav') => void;
     closeMenu: () => void;
 };
 

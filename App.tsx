@@ -2,100 +2,58 @@ import {
   View,
   Animated,
   Text,
-  TextInput,
   Pressable,
   Button,
   FlatList,
-  Alert,
   StyleSheet,
-  Modal,
 } from 'react-native';
 import NoteItem from './src/components/NoteItem';
 import SidebarMenu from './src/components/SidebarMenu';
-import { useState, useEffect, useRef, useMemo } from 'react';
-import { Note } from './src/types/note';
-import { scheduleNotification } from './src/services/notifications';
-import { saveNotes, loadNotes } from './src/services/storage';
-import { toggleFavorite, deleteNoteByIndex } from './src/services/noteActions';
-import { filterNotes } from './src/utils/filterNotes';
+import { useState, useRef} from 'react';
+import { useSidebar } from './src/hooks/useSidebar';
+import { useNotes } from './src/hooks/useNotes';
+import { useCreateNote } from './src/hooks/useCreateNote';
+import CreateNoteModal from './src/components/CreateNoteModal';
+import DateTimePicker from '@react-native-community/datetimepicker';
 
 function App() {
 
-  const handleToggleFavorite = (index: number) => {
-    setNotes(prev => {
-      const updated = toggleFavorite(prev, index);
+  const {
+    filteredNotes,
+    activeTab,
+    setActiveTab,
+    addNote,
+    deleteNote,
+    toggleFav,
+  } = useNotes();
 
-      saveNotes(updated).catch(err => 
-        console.log('SAVE ERROR', err)
-      );
-      
-      return updated;
-    });
-  };
+  const {
+    title,
+    description,
+    favorite,
+    taskDate,
+    setTitle,
+    setDescription,
+    setFavorite,
+    setTaskDate,
+    submit,
+  } = useCreateNote(addNote);
 
-  const handleDelete = (index: number) => {
-    setNotes(prev => {
-      const updated = deleteNoteByIndex(prev, index);
-      saveNotes(updated);
-      return updated;
-    });
-  };
-
-  useEffect(() => {
-    loadNotes().then(setNotes);
-  }, []);
-
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const [favorite, setFavorite] = useState(false);
-  const [taskDate, setTaskDate] = useState('');
   const [modalVisible, setModalVisible] = useState(false);
-  const [notes, setNotes] = useState<Note[]>([]);
-  const [activeTab, setActiveTab] = useState('all');
   const [menuOpen, setMenuOpen] = useState(false);
   const slideAnim = useRef(new Animated.Value(-250)).current;
 
-  const toggleMenu = () => {
-    if (menuOpen) {
-      Animated.timing(slideAnim, {
-        toValue: -250,
-        duration: 400,
-        useNativeDriver: true,
-      }).start();
-
-        setMenuOpen(false);
-    } else {
-      setMenuOpen(true);
-
-      Animated.timing(slideAnim, {
-        toValue: 0,
-        duration: 400,
-        useNativeDriver: true,
-      }).start();
-    }
-  };
-
-  const closeMenu = () => {
-    Animated.timing(slideAnim, {
-      toValue: -250,
-      duration: 400,
-      useNativeDriver: true,
-    }).start();
-    
-    setMenuOpen(false);
-  };
-
-  const filteredNotes = useMemo(() =>
-    filterNotes(notes, activeTab),
-    [notes, activeTab]
-  );
+  const { toggle: toggleMenu, close: closeMenu } = useSidebar({
+    slideAnim,
+    setMenuOpen,
+  });
 
   return (
     <View style={styles.container}>
     
     <View style={styles.header}>
 
-    <Pressable onPress={toggleMenu}>
+    <Pressable onPress={() => toggleMenu(menuOpen)}>
       <Text style={styles.menuButton}>
         ☰
         </Text>
@@ -125,101 +83,19 @@ function App() {
       closeMenu={closeMenu}
     />
 
-      <Modal
-        visible={modalVisible}
-        animationType="slide"
-        onRequestClose={() => setModalVisible(false)}
-        >
-          <View style={styles.modalContainer}>
-
-            <Text style={styles.modalTitle}>
-              Новая заметка
-            </Text>
-
-            <TextInput
-            placeholder="Название задачи"
-            value={title}
-            onChangeText={setTitle}
-            style={styles.input}
-          />
-
-          <TextInput
-            placeholder="Описание (необязательно)"
-            value={description}
-            onChangeText={setDescription}
-            multiline
-            style={[styles.input, { height: 100 }]}
-          />
-
-          <TextInput
-            placeholder="Дата (необязательно)"
-            value={taskDate }
-            onChangeText={setTaskDate}
-            style={styles.input}
-          />
-
-          <Pressable
-            onPress={() => setFavorite(!favorite)}
-            style={styles.favoriteButton}
-          >
-            <Text style={{ fontSize: 28 }}>
-              {favorite ? '❤️' : '🤍'}
-            </Text>
-          </Pressable>
-
-          <Button
-            title="Сохранить"
-            onPress={() => {
-              if (title.trim() === '') {
-                Alert.alert('Ошибка', 'Пожалуйста, введите название задачи.');
-                return;
-              }
-
-              const timestamp = taskDate ? new Date(taskDate).getTime() : NaN;
-
-              if (taskDate && isNaN(timestamp)) {
-                Alert.alert('Ошибка', 'Неверный формат даты!');
-                return;
-              }
-
-              const newNotes = [
-                ...notes,
-                {
-                  title,
-                  description,
-                  favorite,
-                  date: Date.now(),
-                  taskDate: isNaN(timestamp) ? undefined : timestamp,
-                }
-              ];
-
-              setNotes(newNotes);
-              saveNotes(newNotes);
-
-              if (!isNaN(timestamp)) {
-              scheduleNotification(
-                title,
-                description || 'У вас есть задача',
-                timestamp
-              );
-              }
-
-              setTitle('');
-              setDescription('');
-              setFavorite(false);
-              setTaskDate('');
-
-              setModalVisible(false);
-            }}
-          />
-
-          <Button
-            title="Отмена"
-            onPress={() => setModalVisible(false)}
-          />
-
-          </View>
-        </Modal>
+    <CreateNoteModal
+      visible={modalVisible}
+      onClose={() => setModalVisible(false)}
+      title={title}
+      setTitle={setTitle}
+      description={description}
+      setDescription={setDescription}
+      favorite={favorite}
+      setFavorite={setFavorite}
+      taskDate={taskDate}
+      setTaskDate={setTaskDate}
+      submit={submit}
+    />
       
       <FlatList
         data={filteredNotes}
@@ -229,8 +105,8 @@ function App() {
             <NoteItem
               note={item}
               index={index}
-              deleteNote={handleDelete}
-              toggleFavorite={handleToggleFavorite}
+              deleteNote={deleteNote}
+              toggleFavorite={toggleFav}
             />
           );
     }}>
