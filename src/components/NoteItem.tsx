@@ -4,6 +4,7 @@ import {
     Button,
     Pressable,
     StyleSheet,
+    Alert,
 } from "react-native";
 import { Note } from "../types/Note";
 
@@ -21,18 +22,40 @@ function NoteItem({
     toggleFavorite
 }: Props) {
 
-    const formattedDate = new Date(note.date).toLocaleDateString();
+    const formatDate = (timestamp: number) => {
+        const date = new Date(timestamp);
 
-    const formattedTime = new Date(note.date).toLocaleTimeString([], {
-        hour: '2-digit',
-        minute: '2-digit'
-    });
+        const day = String(date.getDate()).padStart(2, '0');
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const year = date.getFullYear();
+
+        return `${day}.${month}.${year}`;
+    };
+
+    const formattedDate = formatDate(note.date);
+    const formattedTaskDate = note.taskDate ? formatDate(note.taskDate) : null;
+
+    const formatTime = (timestamp: number) => {
+        const date = new Date(timestamp);
+
+        const hours = String(date.getHours()).padStart(2, '0');
+        const minutes = String(date.getMinutes()).padStart(2, '0');
+
+        return `${hours}:${minutes}`;
+    };
+
+    const formattedTime = formatTime(note.date);
 
     return (
         <View style={styles.card}>
             <Text style={styles.title}>{note.title}</Text>
             <Text style={styles.description}>{note.description}</Text>
             <Text style={styles.date}>{formattedDate} {formattedTime}</Text>
+            {formattedTaskDate && (
+                <Text style={styles.date}>
+                    Дата задачи: {formattedTaskDate}
+                </Text>
+            )}
 
             <Pressable onPress={() => toggleFavorite(index)}>
                 <Text style={styles.favorite}>
@@ -42,7 +65,23 @@ function NoteItem({
             
             <Button
                 title="Удалить"
-                onPress={() => deleteNote(index)}
+                onPress={() => {
+                    Alert.alert(
+                        'Удаление заметки',
+                        'Вы уверены, что хотите удалить эту заметку?',
+                        [
+                            {
+                                text: 'Отмена',
+                                style: 'cancel'
+                            },
+                            {
+                                text: 'Удалить',
+                                style: 'destructive',
+                                onPress: () => deleteNote(index)
+                            }
+                        ]
+                    );
+                }}
             />
         </View>
     );
@@ -74,7 +113,7 @@ const styles = StyleSheet.create({
     },
 
     date: {
-        color: 'gray',
+        color: '#000000',
         fontSize: 13,
     },
 

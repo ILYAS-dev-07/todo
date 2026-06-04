@@ -6,6 +6,7 @@ import {
   Button,
   FlatList,
   StyleSheet,
+  Alert,
 } from 'react-native';
 import NoteItem from './src/components/NoteItem';
 import SidebarMenu from './src/components/SidebarMenu';
@@ -14,7 +15,6 @@ import { useSidebar } from './src/hooks/useSidebar';
 import { useNotes } from './src/hooks/useNotes';
 import { useCreateNote } from './src/hooks/useCreateNote';
 import CreateNoteModal from './src/components/CreateNoteModal';
-import DateTimePicker from '@react-native-community/datetimepicker';
 
 function App() {
 
@@ -48,6 +48,17 @@ function App() {
     setMenuOpen,
   });
 
+  const getTitle = () => {
+          switch (activeTab) {
+            case 'today':
+              return 'Сегодня';
+            case 'fav':
+              return 'Избранные';
+            default:
+              return 'Дневник';
+          }
+        };
+
   return (
     <View style={styles.container}>
     
@@ -59,9 +70,9 @@ function App() {
         </Text>
     </Pressable>
 
-        <Text style={styles.hearderTitle}>
-          Дневник
-        </Text>
+    <Text style={styles.hearderTitle}>
+      {getTitle()}
+    </Text>
 
     <View style={{ width: 30}}/>
     </View>
@@ -94,7 +105,21 @@ function App() {
       setFavorite={setFavorite}
       taskDate={taskDate}
       setTaskDate={setTaskDate}
-      submit={submit}
+      onSave={() => {
+        const result = submit();
+
+        if (result.error === 'empty_title') {
+          Alert.alert('Ошибка', 'Пожалуйста, введите название задачи');
+          return;
+        }
+
+        if (result.error === 'invalid_date') {
+          Alert.alert('Ошибка', 'Неверный формат даты!');
+          return;
+        }
+
+        setModalVisible(false);
+      }}
     />
       
       <FlatList

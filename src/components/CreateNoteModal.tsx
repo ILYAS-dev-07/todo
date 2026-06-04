@@ -4,16 +4,17 @@ import {
   Text,
   TextInput,
   Pressable,
-  Button,
   Alert,
   StyleSheet,
 } from 'react-native';
+
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useState } from 'react';
 
 type Props = {
   visible: boolean;
   onClose: () => void;
+  onSave: () => void;
 
   title: string;
   setTitle: (text: string) => void;
@@ -26,13 +27,12 @@ type Props = {
 
   taskDate: string;
   setTaskDate: (text: string) => void;
-
-  submit: () => any;
 };
 
 export default function CreateNoteModal({
   visible,
   onClose,
+  onSave,
   title,
   setTitle,
   description,
@@ -41,9 +41,10 @@ export default function CreateNoteModal({
   setFavorite,
   taskDate,
   setTaskDate,
-  submit,
 }: Props) {
-  const [showPicker, setShowPicker] = useState<boolean>(false);
+  const [showPicker, setShowPicker] = useState(false);
+
+
 
   return (
     <Modal
@@ -52,6 +53,7 @@ export default function CreateNoteModal({
       onRequestClose={onClose}
     >
       <View style={styles.modalContainer}>
+
         <Text style={styles.modalTitle}>
           Новая заметка
         </Text>
@@ -72,32 +74,32 @@ export default function CreateNoteModal({
         />
 
         <Pressable
-            onPress={() => setShowPicker(true)}
-            style={styles.input}
+          onPress={() => setShowPicker(true)}
+          style={styles.input}
         >
-
-            <Text>
-                {taskDate
-                    ? new Date(taskDate).toLocaleDateString()
-                    : 'Выбрать дату'}
-            </Text>
-    
+          <Text>
+            {taskDate
+              ? new Date(taskDate).toLocaleDateString()
+              : 'Выбрать дату'}
+          </Text>
         </Pressable>
 
         {showPicker && (
-  <DateTimePicker
-    value={taskDate ? new Date(taskDate) : new Date()}
-    mode="date"
-    display="default"
-    onChange={(event, selectedDate) => {
-      setShowPicker(false);
+          <DateTimePicker
+            value={taskDate ? new Date(taskDate) : new Date()}
+            mode="date"
+            display="default"
+            onChange={(event, selectedDate) => {
+              setShowPicker(false);
 
-      if (selectedDate) {
-        setTaskDate(selectedDate.toISOString());
-      }
-    }}
-  />
-)}
+              if (event.type === 'dismissed') return;
+
+              if (selectedDate) {
+                setTaskDate(selectedDate.toISOString());
+              }
+            }}
+          />
+        )}
 
         <Pressable
           onPress={() => setFavorite(!favorite)}
@@ -108,35 +110,22 @@ export default function CreateNoteModal({
           </Text>
         </Pressable>
 
-        <Button
-          title="Сохранить"
-          onPress={() => {
-            const result = submit();
+        <View style={styles.actions}>
 
-            if (result.error === 'empty_title') {
-              Alert.alert(
-                'Ошибка',
-                'Пожалуйста, введите название задачи.'
-              );
-              return;
-            }
+          <Pressable onPress={onClose} style={styles.cancelBtn}>
+            <Text style={styles.cancelText}>
+              Отмена
+            </Text>
+          </Pressable>
 
-            if (result.error === 'invalid_date') {
-              Alert.alert(
-                'Ошибка',
-                'Неверный формат даты!'
-              );
-              return;
-            }
+          <Pressable onPress={onSave} style={styles.saveBtn}>
+            <Text style={styles.saveText}>
+              Сохранить
+            </Text>
+          </Pressable>
 
-            onClose();
-          }}
-        />
+        </View>
 
-        <Button
-          title="Отмена"
-          onPress={onClose}
-        />
       </View>
     </Modal>
   );
@@ -165,5 +154,33 @@ const styles = StyleSheet.create({
   favoriteButton: {
     alignItems: 'center',
     marginBottom: 20,
+  },
+
+  actions: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 10,
+  },
+
+  cancelBtn: {
+    padding: 12,
+  },
+
+  cancelText: {
+    fontSize: 16,
+    color: '#666',
+  },
+
+  saveBtn: {
+    padding: 12,
+    backgroundColor: '#000',
+    borderRadius: 10,
+  },
+
+  saveText: {
+    fontSize: 16,
+    color: 'white',
+    fontWeight: '600',
   },
 });
