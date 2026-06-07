@@ -1,4 +1,4 @@
-import { Note } from '../types/note';
+import { Note } from '../types/Note';
 
 export const createNote = (
     title: string,
@@ -6,11 +6,16 @@ export const createNote = (
     favorite: boolean,
     taskDate: number | undefined
 ): Note => {
+    const now = Date.now();
+
     return {
+        id: `${now}-${Math.random().toString(36).slice(2)}`,
         title,
         description,
         favorite,
-        date: Date.now(),
+        date: now,
+        createdAt: now,
         taskDate,
+        dueAt: taskDate,
     };
 };

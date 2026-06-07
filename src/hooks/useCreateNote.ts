@@ -1,17 +1,10 @@
 import { useState } from 'react';
 
-type CreateNoteData = {
-  title: string;
-  description: string;
-  favorite: boolean;
-  taskDate: string;
-};
-
 type AddNoteFn = (
-    title: string,
-    description: string,
-    favorite: boolean,
-    taskDate?: number
+  title: string,
+  description: string,
+  favorite: boolean,
+  taskDate?: number,
 ) => void;
 
 export const useCreateNote = (addNote: AddNoteFn) => {
@@ -36,21 +29,20 @@ export const useCreateNote = (addNote: AddNoteFn) => {
 
   const submit = () => {
     if (title.trim() === '') {
-      return { error: 'Пожалуйста, введите название задачи.' };
+      return { error: 'empty_title' };
     }
 
     const timestamp = getTimestamp();
 
     if (taskDate && timestamp === undefined) {
-      return { error: 'Неверный формат даты!' };
+      return { error: 'invalid_date' };
     }
 
-    addNote(
-        title,
-        description,
-        favorite,
-        timestamp
-    );
+    if (timestamp !== undefined && timestamp <= Date.now()) {
+      return { error: 'past_date' };
+    }
+
+    addNote(title.trim(), description.trim(), favorite, timestamp);
 
     resetForm();
 
@@ -68,6 +60,6 @@ export const useCreateNote = (addNote: AddNoteFn) => {
     setTaskDate,
 
     resetForm,
-    submit
+    submit,
   };
 };

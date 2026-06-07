@@ -1,4 +1,4 @@
-import { Note } from '../types/note';
+import { Note } from '../types/Note';
 
 export const toggleFavorite = (notes: Note[], index: number): Note[] => {
     return notes.map((note, i) => 

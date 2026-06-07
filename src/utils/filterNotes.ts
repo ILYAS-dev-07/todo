@@ -1,4 +1,4 @@
-import { Note } from '../types/note';
+import { Note } from '../types/Note';
 
 export const filterNotes = (notes: Note[], filter: string): Note[] => {
     if (filter === 'today') {

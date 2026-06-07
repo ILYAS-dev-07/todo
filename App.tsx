@@ -10,14 +10,14 @@ import {
 } from 'react-native';
 import NoteItem from './src/components/NoteItem';
 import SidebarMenu from './src/components/SidebarMenu';
-import { useState, useRef} from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useSidebar } from './src/hooks/useSidebar';
 import { useNotes } from './src/hooks/useNotes';
 import { useCreateNote } from './src/hooks/useCreateNote';
 import CreateNoteModal from './src/components/CreateNoteModal';
+import { requestNotificationPermission } from './src/services/notifications';
 
 function App() {
-
   const {
     filteredNotes,
     activeTab,
@@ -48,95 +48,91 @@ function App() {
     setMenuOpen,
   });
 
+  useEffect(() => {
+    requestNotificationPermission();
+  }, []);
+
   const getTitle = () => {
-          switch (activeTab) {
-            case 'today':
-              return 'Сегодня';
-            case 'fav':
-              return 'Избранные';
-            default:
-              return 'Дневник';
-          }
-        };
+    switch (activeTab) {
+      case 'today':
+        return 'Сегодня';
+      case 'fav':
+        return 'Избранные';
+      default:
+        return 'Дневник';
+    }
+  };
 
   return (
     <View style={styles.container}>
-    
-    <View style={styles.header}>
+      <View style={styles.header}>
+        <Pressable onPress={() => toggleMenu(menuOpen)}>
+          <Text style={styles.menuButton}>☰</Text>
+        </Pressable>
 
-    <Pressable onPress={() => toggleMenu(menuOpen)}>
-      <Text style={styles.menuButton}>
-        ☰
-        </Text>
-    </Pressable>
+        <Text style={styles.hearderTitle}>{getTitle()}</Text>
 
-    <Text style={styles.hearderTitle}>
-      {getTitle()}
-    </Text>
-
-    <View style={{ width: 30}}/>
-    </View>
+        <View style={styles.headerSpacer} />
+      </View>
 
       <Button
-      title="Создать заметку"
-      onPress={() => setModalVisible(true)}
+        title="Создать заметку"
+        onPress={() => setModalVisible(true)}
       />
 
-    {menuOpen && (
-      <Pressable
-        style={styles.backdrop}
-        onPress={closeMenu}
+      {menuOpen && <Pressable style={styles.backdrop} onPress={closeMenu} />}
+
+      <SidebarMenu
+        slideAnim={slideAnim}
+        setActiveTab={setActiveTab}
+        closeMenu={closeMenu}
       />
-          )}
-    <SidebarMenu
-      slideAnim={slideAnim}
-      setActiveTab={setActiveTab}
-      closeMenu={closeMenu}
-    />
 
-    <CreateNoteModal
-      visible={modalVisible}
-      onClose={() => setModalVisible(false)}
-      title={title}
-      setTitle={setTitle}
-      description={description}
-      setDescription={setDescription}
-      favorite={favorite}
-      setFavorite={setFavorite}
-      taskDate={taskDate}
-      setTaskDate={setTaskDate}
-      onSave={() => {
-        const result = submit();
+      <CreateNoteModal
+        visible={modalVisible}
+        onClose={() => setModalVisible(false)}
+        title={title}
+        setTitle={setTitle}
+        description={description}
+        setDescription={setDescription}
+        favorite={favorite}
+        setFavorite={setFavorite}
+        taskDate={taskDate}
+        setTaskDate={setTaskDate}
+        onSave={() => {
+          const result = submit();
 
-        if (result.error === 'empty_title') {
-          Alert.alert('Ошибка', 'Пожалуйста, введите название задачи');
-          return;
-        }
+          if (result.error === 'empty_title') {
+            Alert.alert('Ошибка', 'Пожалуйста, введите название задачи');
+            return;
+          }
 
-        if (result.error === 'invalid_date') {
-          Alert.alert('Ошибка', 'Неверный формат даты!');
-          return;
-        }
+          if (result.error === 'invalid_date') {
+            Alert.alert('Ошибка', 'Неверный формат даты!');
+            return;
+          }
 
-        setModalVisible(false);
-      }}
-    />
-      
+          if (result.error === 'past_date') {
+            Alert.alert('Ошибка', 'Выберите будущую дату и время для уведомления');
+            return;
+          }
+
+          setModalVisible(false);
+        }}
+      />
+
       <FlatList
         data={filteredNotes}
-        keyExtractor={(item, index) => index.toString()}
-        renderItem={({ item, index }) => {
-          return (
-            <NoteItem
-              note={item}
-              index={index}
-              deleteNote={deleteNote}
-              toggleFavorite={toggleFav}
-            />
-          );
-    }}>
-      </FlatList>
-
+        keyExtractor={(item, index) => item.id ?? index.toString()}
+        renderItem={({ item, index }) => (
+          <NoteItem
+            note={item}
+            index={index}
+            deleteNote={deleteNote}
+            toggleFavorite={toggleFav}
+          />
+        )}
+      />
     </View>
   );
 }
@@ -153,6 +149,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     marginBottom: 20,
+  },
+
+  headerSpacer: {
+    width: 30,
   },
 
   menuButton: {
@@ -183,30 +183,6 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.3)',
     zIndex: 50,
   },
-
-  modalContainer: {
-    flex: 1,
-    padding: 20,
-    backgroundColor: '#f5f5f5',
-  },
-
-  modalTitle: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    marginBottom: 20,
-  },
-
-  input: {
-    backgroundColor: 'white',
-    padding: 12,
-    borderRadius: 10,
-    marginBottom: 12,
-  },
-
-  favoriteButton: {
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  });
+});
 
 export default App;

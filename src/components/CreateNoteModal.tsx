@@ -4,12 +4,11 @@ import {
   Text,
   TextInput,
   Pressable,
-  Alert,
   StyleSheet,
 } from 'react-native';
 
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 type Props = {
   visible: boolean;
@@ -42,21 +41,40 @@ export default function CreateNoteModal({
   taskDate,
   setTaskDate,
 }: Props) {
-  const [showPicker, setShowPicker] = useState(false);
+  const [showDate, setShowDate] = useState(false);
+  const [showTime, setShowTime] = useState(false);
+  const [tempDate, setTempDate] = useState(new Date());
 
+  useEffect(() => {
+    if (visible) {
+      setTempDate(taskDate ? new Date(taskDate) : new Date());
+    }
+  }, [taskDate, visible]);
 
+  const formatDate = (date: Date) => {
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+
+    return `${day}/${month}/${year}`;
+  };
+
+  const formatTime = (date: Date) => {
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+
+    return `${hours}:${minutes}`;
+  };
+
+  const updateTaskDate = (date: Date) => {
+    setTempDate(date);
+    setTaskDate(date.toISOString());
+  };
 
   return (
-    <Modal
-      visible={visible}
-      animationType="slide"
-      onRequestClose={onClose}
-    >
+    <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
       <View style={styles.modalContainer}>
-
-        <Text style={styles.modalTitle}>
-          Новая заметка
-        </Text>
+        <Text style={styles.modalTitle}>Новая заметка</Text>
 
         <TextInput
           placeholder="Название задачи"
@@ -70,63 +88,71 @@ export default function CreateNoteModal({
           value={description}
           onChangeText={setDescription}
           multiline
-          style={[styles.input, { height: 100 }]}
+          style={[styles.input, styles.descriptionInput]}
         />
 
-        <Pressable
-          onPress={() => setShowPicker(true)}
-          style={styles.input}
-        >
-          <Text>
-            {taskDate
-              ? new Date(taskDate).toLocaleDateString()
-              : 'Выбрать дату'}
-          </Text>
+        <Pressable onPress={() => setShowDate(true)} style={styles.input}>
+          <Text>{formatDate(tempDate)}</Text>
         </Pressable>
 
-        {showPicker && (
-          <DateTimePicker
-            value={taskDate ? new Date(taskDate) : new Date()}
-            mode="date"
-            display="default"
-            onChange={(event, selectedDate) => {
-              setShowPicker(false);
-
-              if (event.type === 'dismissed') return;
-
-              if (selectedDate) {
-                setTaskDate(selectedDate.toISOString());
-              }
-            }}
-          />
-        )}
+        <Pressable onPress={() => setShowTime(true)} style={styles.input}>
+          <Text>{formatTime(tempDate)}</Text>
+        </Pressable>
 
         <Pressable
           onPress={() => setFavorite(!favorite)}
           style={styles.favoriteButton}
         >
-          <Text style={{ fontSize: 28 }}>
-            {favorite ? '❤️' : '🤍'}
-          </Text>
+          <Text style={styles.favoriteText}>{favorite ? '♥' : '♡'}</Text>
         </Pressable>
 
         <View style={styles.actions}>
-
           <Pressable onPress={onClose} style={styles.cancelBtn}>
-            <Text style={styles.cancelText}>
-              Отмена
-            </Text>
+            <Text style={styles.cancelText}>Отмена</Text>
           </Pressable>
 
           <Pressable onPress={onSave} style={styles.saveBtn}>
-            <Text style={styles.saveText}>
-              Сохранить
-            </Text>
+            <Text style={styles.saveText}>Сохранить</Text>
           </Pressable>
-
         </View>
-
       </View>
+
+      {showDate && (
+        <DateTimePicker
+          value={tempDate}
+          mode="date"
+          display="default"
+          onChange={(_, date) => {
+            setShowDate(false);
+            if (!date) return;
+
+            const updated = new Date(tempDate);
+            updated.setFullYear(date.getFullYear(), date.getMonth(), date.getDate());
+            updateTaskDate(updated);
+          }}
+        />
+      )}
+
+      {showTime && (
+        <DateTimePicker
+          value={tempDate}
+          mode="time"
+          is24Hour={true}
+          display="default"
+          onChange={(_, time) => {
+            setShowTime(false);
+            if (!time) return;
+
+            const updated = new Date(tempDate);
+            updated.setHours(time.getHours());
+            updated.setMinutes(time.getMinutes());
+            updated.setSeconds(0);
+            updated.setMilliseconds(0);
+
+            updateTaskDate(updated);
+          }}
+        />
+      )}
     </Modal>
   );
 }
@@ -151,9 +177,18 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
 
+  descriptionInput: {
+    height: 100,
+    textAlignVertical: 'top',
+  },
+
   favoriteButton: {
     alignItems: 'center',
     marginBottom: 20,
+  },
+
+  favoriteText: {
+    fontSize: 28,
   },
 
   actions: {

@@ -1,28 +1,76 @@
-import notifee, { AndroidImportance, TriggerType, } from '@notifee/react-native'
+import notifee, {
+  AlarmType,
+  AndroidImportance,
+  AuthorizationStatus,
+  TimestampTrigger,
+  TriggerType,
+} from '@notifee/react-native';
+
+const CHANNEL_ID = 'tasks';
+
+export const requestNotificationPermission = async () => {
+  const settings = await notifee.requestPermission();
+
+  return (
+    settings.authorizationStatus === AuthorizationStatus.AUTHORIZED ||
+    settings.authorizationStatus === AuthorizationStatus.PROVISIONAL
+  );
+};
 
 export const scheduleNotification = async (
-    title: string,
-    body: string,
-    timestamp: number
-  ) => {
+  id: string,
+  title: string,
+  body: string,
+  timestamp: number,
+) => {
+  if (timestamp <= Date.now()) {
+    return;
+  }
 
-    const channelId = await notifee.createChannel({
-      id: 'default',
-      name: 'Default Channel',
-      importance: AndroidImportance.HIGH,
-    });
+  const hasPermission = await requestNotificationPermission();
+  if (!hasPermission) {
+    return;
+  }
 
-    await notifee.createTriggerNotification(
-      {
-      title,
-      body,
-      android: {
-        channelId,
+  const channelId = await notifee.createChannel({
+    id: CHANNEL_ID,
+    name: 'Task reminders',
+    importance: AndroidImportance.HIGH,
+  });
+
+  const notification = {
+    id,
+    title,
+    body,
+    android: {
+      channelId,
+      pressAction: {
+        id: 'default',
       },
     },
-    {
-      type: TriggerType.TIMESTAMP,
-      timestamp,
-    }
-  );
   };
+
+  const trigger: TimestampTrigger = {
+    type: TriggerType.TIMESTAMP,
+    timestamp,
+    alarmManager: {
+      type: AlarmType.SET_EXACT_AND_ALLOW_WHILE_IDLE,
+    },
+  };
+
+  try {
+    await notifee.createTriggerNotification(notification, trigger);
+  } catch {
+    await notifee.createTriggerNotification(
+      notification,
+      {
+        type: TriggerType.TIMESTAMP,
+        timestamp,
+      },
+    );
+  }
+};
+
+export const cancelNotification = async (id: string) => {
+  await notifee.cancelNotification(id);
+};
