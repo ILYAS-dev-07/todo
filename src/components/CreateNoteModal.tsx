@@ -1,3 +1,4 @@
+import React, { useEffect, useState } from 'react';
 import {
   Modal,
   View,
@@ -5,15 +6,18 @@ import {
   TextInput,
   Pressable,
   StyleSheet,
+  ScrollView,
 } from 'react-native';
-
+import { useAttachments } from '../hooks/useAttachments';
+import AttachmentPicker from './AttachmentPicker';
+import AttachmentPreview from './AttachmentPreview';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { useEffect, useState } from 'react';
+import { Attachment } from '../types/Attachment';
 
 type Props = {
   visible: boolean;
   onClose: () => void;
-  onSave: () => void;
+  onSave: (attachments: Attachment[]) => void;
 
   title: string;
   setTitle: (text: string) => void;
@@ -45,9 +49,13 @@ export default function CreateNoteModal({
   const [showTime, setShowTime] = useState(false);
   const [tempDate, setTempDate] = useState(new Date());
 
+  const { attachments, addAttachments, removeAttachment, clearAttachments } = useAttachments();
+
   useEffect(() => {
     if (visible) {
       setTempDate(taskDate ? new Date(taskDate) : new Date());
+    } else {
+      clearAttachments();
     }
   }, [taskDate, visible]);
 
@@ -71,51 +79,66 @@ export default function CreateNoteModal({
     setTaskDate(date.toISOString());
   };
 
+  const handleSave = () => {
+    onSave(attachments);
+  };
+
   return (
     <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
-      <View style={styles.modalContainer}>
-        <Text style={styles.modalTitle}>Новая заметка</Text>
+      <ScrollView contentContainerStyle={styles.scrollContainer}>
+        <View style={styles.modalContainer}>
+          <Text style={styles.modalTitle}>Новая заметка</Text>
 
-        <TextInput
-          placeholder="Название задачи"
-          value={title}
-          onChangeText={setTitle}
-          style={styles.input}
-        />
+          <TextInput
+            placeholder="Название задачи"
+            value={title}
+            onChangeText={setTitle}
+            style={styles.input}
+          />
 
-        <TextInput
-          placeholder="Описание (необязательно)"
-          value={description}
-          onChangeText={setDescription}
-          multiline
-          style={[styles.input, styles.descriptionInput]}
-        />
+          <TextInput
+            placeholder="Описание (необязательно)"
+            value={description}
+            onChangeText={setDescription}
+            multiline
+            style={[styles.input, styles.descriptionInput]}
+          />
 
-        <Pressable onPress={() => setShowDate(true)} style={styles.input}>
-          <Text>{formatDate(tempDate)}</Text>
-        </Pressable>
-
-        <Pressable onPress={() => setShowTime(true)} style={styles.input}>
-          <Text>{formatTime(tempDate)}</Text>
-        </Pressable>
-
-        <Pressable
-          onPress={() => setFavorite(!favorite)}
-          style={styles.favoriteButton}
-        >
-          <Text style={styles.favoriteText}>{favorite ? '♥' : '♡'}</Text>
-        </Pressable>
-
-        <View style={styles.actions}>
-          <Pressable onPress={onClose} style={styles.cancelBtn}>
-            <Text style={styles.cancelText}>Отмена</Text>
+          <Pressable onPress={() => setShowDate(true)} style={styles.input}>
+            <Text>{formatDate(tempDate)}</Text>
           </Pressable>
 
-          <Pressable onPress={onSave} style={styles.saveBtn}>
-            <Text style={styles.saveText}>Сохранить</Text>
+          <Pressable onPress={() => setShowTime(true)} style={styles.input}>
+            <Text>{formatTime(tempDate)}</Text>
           </Pressable>
+
+          <Pressable
+            onPress={() => setFavorite(!favorite)}
+            style={styles.favoriteButton}
+          >
+            <Text style={styles.favoriteText}>{favorite ? '♥' : '♡'}</Text>
+          </Pressable>
+
+          <View style={styles.attachmentSection}>
+            <AttachmentPicker onPick={addAttachments} />
+            {attachments.length > 0 && (
+              <View style={styles.previewContainer}>
+                <AttachmentPreview attachments={attachments} onDelete={removeAttachment} />
+              </View>
+            )}
+          </View>
+
+          <View style={styles.actions}>
+            <Pressable onPress={onClose} style={styles.cancelBtn}>
+              <Text style={styles.cancelText}>Отмена</Text>
+            </Pressable>
+
+            <Pressable onPress={handleSave} style={styles.saveBtn}>
+              <Text style={styles.saveText}>Сохранить</Text>
+            </Pressable>
+          </View>
         </View>
-      </View>
+      </ScrollView>
 
       {showDate && (
         <DateTimePicker
@@ -158,6 +181,9 @@ export default function CreateNoteModal({
 }
 
 const styles = StyleSheet.create({
+  scrollContainer: {
+    flexGrow: 1,
+  },
   modalContainer: {
     flex: 1,
     padding: 20,
@@ -189,6 +215,19 @@ const styles = StyleSheet.create({
 
   favoriteText: {
     fontSize: 28,
+  },
+
+  attachmentSection: {
+    backgroundColor: 'white',
+    padding: 12,
+    borderRadius: 10,
+    marginBottom: 12,
+    alignItems: 'stretch',
+  },
+
+  previewContainer: {
+    marginTop: 15,
+    height: 110,
   },
 
   actions: {

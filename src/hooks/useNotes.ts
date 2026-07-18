@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 
 import { Note } from '../types/Note';
+import { Attachment } from '../types/Attachment'; 
 import { saveNotes, loadNotes } from '../services/storage';
 import { toggleFavorite, deleteNoteByIndex } from '../services/noteActions';
 import { filterNotes } from '../utils/filterNotes';
@@ -31,6 +32,7 @@ export const useNotes = () => {
     description: string,
     favorite: boolean,
     taskDate?: number,
+    attachments: Attachment[] = [],
   ) => {
     const now = Date.now();
     const id = `${now}-${Math.random().toString(36).slice(2)}`;
@@ -45,6 +47,7 @@ export const useNotes = () => {
         createdAt: now,
         taskDate,
         dueAt: taskDate,
+        attachments,
       },
     ];
 
@@ -94,8 +97,6 @@ export const useNotes = () => {
     filteredNotes,
     activeTab,
     setActiveTab,
-    loading,
-
     addNote,
     deleteNote,
     toggleFav,

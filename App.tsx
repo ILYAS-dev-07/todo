@@ -89,37 +89,38 @@ function App() {
       />
 
       <CreateNoteModal
-        visible={modalVisible}
-        onClose={() => setModalVisible(false)}
-        title={title}
-        setTitle={setTitle}
-        description={description}
-        setDescription={setDescription}
-        favorite={favorite}
-        setFavorite={setFavorite}
-        taskDate={taskDate}
-        setTaskDate={setTaskDate}
-        onSave={() => {
-          const result = submit();
+  visible={modalVisible}
+  onClose={() => setModalVisible(false)}
 
-          if (result.error === 'empty_title') {
-            Alert.alert('Ошибка', 'Пожалуйста, введите название задачи');
-            return;
-          }
+  onSave={(attachments) => {
+    const result = submit(attachments); 
 
-          if (result.error === 'invalid_date') {
-            Alert.alert('Ошибка', 'Неверный формат даты!');
-            return;
-          }
+    if (result.error === 'empty_title') {
+      Alert.alert('Ошибка', 'Пожалуйста, введите название задачи');
+      return;
+    }
 
-          if (result.error === 'past_date') {
-            Alert.alert('Ошибка', 'Выберите будущую дату и время для уведомления');
-            return;
-          }
+    if (result.error === 'invalid_date') {
+      Alert.alert('Ошибка', 'Неверный формат даты!');
+      return;
+    }
 
-          setModalVisible(false);
-        }}
-      />
+    if (result.error === 'past_date') {
+      Alert.alert('Ошибка', 'Выберите будущую дату и время для уведомления');
+      return;
+    }
+
+    setModalVisible(false);
+  }}
+  title={title}
+  setTitle={setTitle}
+  description={description}
+  setDescription={setDescription}
+  favorite={favorite}
+  setFavorite={setFavorite}
+  taskDate={taskDate}
+  setTaskDate={setTaskDate}
+/>
 
       <FlatList
         data={filteredNotes}

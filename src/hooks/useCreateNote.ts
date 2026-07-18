@@ -1,10 +1,12 @@
 import { useState } from 'react';
+import { Attachment } from '../types/Attachment';
 
 type AddNoteFn = (
   title: string,
   description: string,
   favorite: boolean,
   taskDate?: number,
+  attachments?: Attachment[],
 ) => void;
 
 export const useCreateNote = (addNote: AddNoteFn) => {
@@ -27,7 +29,7 @@ export const useCreateNote = (addNote: AddNoteFn) => {
     return isNaN(timestamp) ? undefined : timestamp;
   };
 
-  const submit = () => {
+  const submit = (attachments: Attachment[] = []) => {
     if (title.trim() === '') {
       return { error: 'empty_title' };
     }
@@ -42,7 +44,7 @@ export const useCreateNote = (addNote: AddNoteFn) => {
       return { error: 'past_date' };
     }
 
-    addNote(title.trim(), description.trim(), favorite, timestamp);
+    addNote(title.trim(), description.trim(), favorite, timestamp, attachments);
 
     resetForm();
 
